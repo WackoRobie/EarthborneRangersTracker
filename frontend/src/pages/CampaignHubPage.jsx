@@ -23,8 +23,7 @@ function SessionTab({ campaign, activeDay, missions, onMissionUpdate, onRefresh 
   const [eventText, setEventText] = useState('')
   const [events, setEvents] = useState([])
   const [rewards, setRewards] = useState([])
-  const [cards, setCards] = useState([])
-  const [rewardCardId, setRewardCardId] = useState('')
+  const [rewardCardName, setRewardCardName] = useState('')
   const [rewardQty, setRewardQty] = useState('1')
   const [newMissionName, setNewMissionName] = useState('')
   const [newMissionMax, setNewMissionMax] = useState('0')
@@ -38,7 +37,6 @@ function SessionTab({ campaign, activeDay, missions, onMissionUpdate, onRefresh 
   useEffect(() => {
     loadEvents()
     loadRewards()
-    api.getCards().then(setCards)
   }, [loadEvents, loadRewards])
 
   const ongoingMissions = missions.filter((m) => !m.day_completed_id)
@@ -76,10 +74,10 @@ function SessionTab({ campaign, activeDay, missions, onMissionUpdate, onRefresh 
   }
 
   async function addReward() {
-    if (!rewardCardId) return
+    if (!rewardCardName.trim()) return
     try {
-      await api.addReward(cid, { card_id: parseInt(rewardCardId), quantity: parseInt(rewardQty) || 1 })
-      setRewardCardId('')
+      await api.addReward(cid, { card_name: rewardCardName.trim(), quantity: parseInt(rewardQty) || 1 })
+      setRewardCardName('')
       setRewardQty('1')
       loadRewards()
     } catch (e) { setError(e.message) }
@@ -252,18 +250,12 @@ function SessionTab({ campaign, activeDay, missions, onMissionUpdate, onRefresh 
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex gap-2">
-            <Select value={rewardCardId} onValueChange={setRewardCardId}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select card..." />
-              </SelectTrigger>
-              <SelectContent>
-                {cards.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.name} ({c.card_type})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              placeholder="Card name..."
+              value={rewardCardName}
+              onChange={(e) => setRewardCardName(e.target.value)}
+              className="flex-1"
+            />
             <Input
               type="number"
               min="1"
@@ -272,7 +264,7 @@ function SessionTab({ campaign, activeDay, missions, onMissionUpdate, onRefresh 
               onChange={(e) => setRewardQty(e.target.value)}
               className="w-20"
             />
-            <Button onClick={addReward} disabled={!rewardCardId}>Add</Button>
+            <Button onClick={addReward} disabled={!rewardCardName.trim()}>Add</Button>
           </div>
         </CardContent>
       </Card>
@@ -423,8 +415,7 @@ function RangersTab({ campaign, rangers }) {
 
 function RewardsTab({ campaign }) {
   const [rewards, setRewards] = useState([])
-  const [cards, setCards] = useState([])
-  const [rewardCardId, setRewardCardId] = useState('')
+  const [rewardCardName, setRewardCardName] = useState('')
   const [rewardQty, setRewardQty] = useState('1')
   const [error, setError] = useState(null)
 
@@ -434,14 +425,13 @@ function RewardsTab({ campaign }) {
 
   useEffect(() => {
     loadRewards()
-    api.getCards().then(setCards)
   }, [loadRewards])
 
   async function addReward() {
-    if (!rewardCardId) return
+    if (!rewardCardName.trim()) return
     try {
-      await api.addReward(cid, { card_id: parseInt(rewardCardId), quantity: parseInt(rewardQty) || 1 })
-      setRewardCardId('')
+      await api.addReward(cid, { card_name: rewardCardName.trim(), quantity: parseInt(rewardQty) || 1 })
+      setRewardCardName('')
       setRewardQty('1')
       loadRewards()
     } catch (e) { setError(e.message) }
@@ -464,18 +454,12 @@ function RewardsTab({ campaign }) {
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Select value={rewardCardId} onValueChange={setRewardCardId}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select card..." />
-              </SelectTrigger>
-              <SelectContent>
-                {cards.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.name} ({c.card_type})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              placeholder="Card name..."
+              value={rewardCardName}
+              onChange={(e) => setRewardCardName(e.target.value)}
+              className="flex-1"
+            />
             <Input
               type="number"
               min="1"
@@ -484,7 +468,7 @@ function RewardsTab({ campaign }) {
               onChange={(e) => setRewardQty(e.target.value)}
               className="w-20"
             />
-            <Button onClick={addReward} disabled={!rewardCardId}>Add</Button>
+            <Button onClick={addReward} disabled={!rewardCardName.trim()}>Add</Button>
           </div>
         </CardContent>
       </Card>
@@ -500,7 +484,6 @@ function RewardsTab({ campaign }) {
               <thead>
                 <tr className="text-muted-foreground text-left">
                   <th className="pb-2">Card</th>
-                  <th className="pb-2">Type</th>
                   <th className="pb-2 text-right">Qty</th>
                   <th className="pb-2"></th>
                 </tr>
@@ -508,8 +491,7 @@ function RewardsTab({ campaign }) {
               <tbody>
                 {rewards.map((rw) => (
                   <tr key={rw.id} className="border-t">
-                    <td className="py-2">{rw.card?.name ?? rw.card_id}</td>
-                    <td className="py-2 text-muted-foreground">{rw.card?.card_type}</td>
+                    <td className="py-2">{rw.card_name}</td>
                     <td className="py-2 text-right">{rw.quantity}</td>
                     <td className="py-2 text-right">
                       <Button variant="ghost" size="icon" className="h-6 w-6"

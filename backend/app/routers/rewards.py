@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.campaign import Campaign, CampaignReward
-from app.models.card import Card
 from app.schemas.reward import RewardAdd, RewardResponse
 
 router = APIRouter(prefix="/api/campaigns/{campaign_id}/rewards", tags=["rewards"])
@@ -22,24 +21,25 @@ def list_rewards(campaign_id: int, db: Session = Depends(get_db)):
     return (
         db.query(CampaignReward)
         .filter_by(campaign_id=campaign_id)
+        .order_by(CampaignReward.card_name)
         .all()
     )
 
 
 @router.post("", response_model=RewardResponse, status_code=201)
 def add_reward(campaign_id: int, body: RewardAdd, db: Session = Depends(get_db)):
-    """Add a card to the campaign rewards pool (earned during a session)."""
+    """Add a card to the campaign rewards pool by name."""
     _get_campaign_or_404(campaign_id, db)
 
+    if not body.card_name.strip():
+        raise HTTPException(400, "card_name must not be empty")
     if body.quantity < 1:
         raise HTTPException(400, "quantity must be at least 1")
 
-    card = db.get(Card, body.card_id)
-    if not card:
-        raise HTTPException(404, "Card not found")
+    card_name = body.card_name.strip()
 
     entry = db.query(CampaignReward).filter_by(
-        campaign_id=campaign_id, card_id=body.card_id
+        campaign_id=campaign_id, card_name=card_name
     ).first()
 
     if entry:
@@ -47,7 +47,7 @@ def add_reward(campaign_id: int, body: RewardAdd, db: Session = Depends(get_db))
     else:
         entry = CampaignReward(
             campaign_id=campaign_id,
-            card_id=body.card_id,
+            card_name=card_name,
             quantity=body.quantity,
         )
         db.add(entry)

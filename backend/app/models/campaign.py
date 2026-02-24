@@ -10,6 +10,7 @@ from app.database import Base
 class CampaignStatus(str, enum.Enum):
     active = "active"
     completed = "completed"
+    archived = "archived"
 
 
 class DayStatus(str, enum.Enum):
@@ -36,13 +37,18 @@ class Campaign(Base):
 
 
 class CampaignReward(Base):
-    """A card currently available in the campaign-wide rewards pool."""
+    """A card currently available in the campaign-wide rewards pool.
+
+    card_name stores a free-form card name (physical card from the game).
+    card_id is reserved for future use when pool entries are linked to the card library.
+    """
 
     __tablename__ = "campaign_rewards"
 
     id = Column(Integer, primary_key=True)
     campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=False)
-    card_id = Column(Integer, ForeignKey("cards.id"), nullable=False)
+    card_name = Column(String, nullable=True)
+    card_id = Column(Integer, ForeignKey("cards.id"), nullable=True)
     quantity = Column(Integer, nullable=False, default=1)
 
     campaign = relationship("Campaign", back_populates="rewards")

@@ -1,62 +1,29 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { RotateCcw } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import PageHeader from '@/components/shared/PageHeader'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import ErrorMessage from '@/components/shared/ErrorMessage'
 
 const PATH_TERRAINS = ['Forest', 'Grassland', 'Marsh', 'Mountain', 'River', 'Scrubland']
 
-function RangerTradePanel({ ranger, activeDay, rewards, onTradeComplete }) {
+function RangerTradePanel({ ranger, rewards }) {
   const cid = ranger.campaign_id
-  const [origCardId, setOrigCardId] = useState('')
-  const [rewardCardId, setRewardCardId] = useState('')
-  const [trades, setTrades] = useState([])
   const [decklist, setDecklist] = useState([])
-  const [error, setError] = useState(null)
 
   const loadRanger = useCallback(async () => {
     const r = await api.getRanger(cid, ranger.id)
     setDecklist(r.current_decklist ?? [])
-    setTrades(r.trades ?? [])
   }, [cid, ranger.id])
 
   useEffect(() => { loadRanger() }, [loadRanger])
 
   const activeRewards = rewards.filter((rw) => rw.quantity > 0)
-
-  async function executeTrade() {
-    if (!origCardId || !rewardCardId || !activeDay) return
-    try {
-      await api.createTrade(cid, ranger.id, {
-        day_id: activeDay.id,
-        original_card_id: parseInt(origCardId),
-        reward_card_id: parseInt(rewardCardId),
-      })
-      setOrigCardId('')
-      setRewardCardId('')
-      await loadRanger()
-      onTradeComplete()
-    } catch (e) { setError(e.message) }
-  }
-
-  async function revertTrade(tid) {
-    try {
-      await api.revertTrade(cid, ranger.id, tid)
-      await loadRanger()
-      onTradeComplete()
-    } catch (e) { setError(e.message) }
-  }
-
-  const nonReverted = trades.filter((t) => !t.reverted)
 
   return (
     <Card>
@@ -64,62 +31,36 @@ function RangerTradePanel({ ranger, activeDay, rewards, onTradeComplete }) {
         <CardTitle className="text-base">{ranger.name}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {error && <ErrorMessage message={error} />}
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Trade away (from deck)</Label>
-            <Select value={origCardId} onValueChange={setOrigCardId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select card..." />
-              </SelectTrigger>
-              <SelectContent>
-                {decklist.map((entry) => (
-                  <SelectItem key={entry.card.id} value={String(entry.card.id)}>
-                    {entry.card.name} ×{entry.quantity}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="font-medium text-muted-foreground mb-2">Current Deck</p>
+            {decklist.length === 0
+              ? <p className="text-muted-foreground italic">Empty</p>
+              : decklist.map((e) => (
+                <div key={e.card.id} className="flex justify-between py-0.5">
+                  <span>{e.card.name}</span>
+                  <span className="text-muted-foreground">×{e.quantity}</span>
+                </div>
+              ))
+            }
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Receive (from pool)</Label>
-            <Select value={rewardCardId} onValueChange={setRewardCardId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select card..." />
-              </SelectTrigger>
-              <SelectContent>
-                {activeRewards.map((rw) => (
-                  <SelectItem key={rw.id} value={String(rw.card_id)}>
-                    {rw.card?.name ?? rw.card_id} ×{rw.quantity}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div>
+            <p className="font-medium text-muted-foreground mb-2">Rewards Pool</p>
+            {activeRewards.length === 0
+              ? <p className="text-muted-foreground italic">Empty</p>
+              : activeRewards.map((rw) => (
+                <div key={rw.id} className="flex justify-between py-0.5">
+                  <span>{rw.card_name}</span>
+                  <span className="text-muted-foreground">×{rw.quantity}</span>
+                </div>
+              ))
+            }
           </div>
         </div>
-        <Button onClick={executeTrade} disabled={!origCardId || !rewardCardId || !activeDay} size="sm">
-          Execute Trade
-        </Button>
-
-        {nonReverted.length > 0 && (
-          <>
-            <Separator />
-            <p className="text-sm font-medium">Recorded Trades</p>
-            {nonReverted.map((t) => (
-              <div key={t.id} className="flex items-center justify-between text-sm">
-                <span>
-                  <span className="text-muted-foreground">{t.original_card?.name}</span>
-                  {' → '}
-                  <span className="font-medium">{t.reward_card?.name}</span>
-                </span>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => revertTrade(t.id)}>
-                  <RotateCcw className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </>
-        )}
+        <p className="text-xs text-muted-foreground border-t pt-3">
+          Trade recording will be available once the card library is linked to the rewards pool.
+          Record any trades made on your physical cards — deck rebuilding reference above.
+        </p>
       </CardContent>
     </Card>
   )
@@ -220,9 +161,7 @@ export default function DayClosePage() {
                 <RangerTradePanel
                   key={r.id}
                   ranger={r}
-                  activeDay={activeDay}
                   rewards={rewards}
-                  onTradeComplete={loadRewards}
                 />
               ))}
             </div>

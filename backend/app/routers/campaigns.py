@@ -85,11 +85,20 @@ def update_campaign(campaign_id: int, body: CampaignUpdate, db: Session = Depend
         campaign.name = body.name
 
     if body.status is not None:
-        if body.status not in (CampaignStatus.active, CampaignStatus.completed):
-            raise HTTPException(status_code=400, detail="status must be 'active' or 'completed'")
+        if body.status not in (CampaignStatus.active, CampaignStatus.completed, CampaignStatus.archived):
+            raise HTTPException(status_code=400, detail="status must be 'active', 'completed', or 'archived'")
         campaign.status = body.status
 
     db.commit()
     db.refresh(campaign)
     campaign.current_day = _active_day(campaign)
     return campaign
+
+
+@router.delete("/{campaign_id}", status_code=204)
+def delete_campaign(campaign_id: int, db: Session = Depends(get_db)):
+    campaign = db.get(Campaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    db.delete(campaign)
+    db.commit()

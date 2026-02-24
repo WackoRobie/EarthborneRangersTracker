@@ -148,6 +148,15 @@ Each play session maps to one Day. The app supports three phases:
 - [x] **Ranger stats** — fixed at creation; AWA/FIT/FOC/SPI do not change over the campaign.
 - [ ] **Storyline expansions** — how do expansion storylines differ structurally from the base *Lore of the Valley*? Any data that needs special handling?
 
+## Future TODOs
+
+### Rewards pool → card library integration
+The rewards pool currently stores card names as free-form text. When the card library grows to cover all earnable cards, the pool should be upgraded so each entry can optionally link to a `Card` row (the `card_id` FK already exists in `campaign_rewards`, currently unused).
+
+Once that link exists, the day-close trade recording can be fully restored:
+- Trades need to match pool entries by card ID (not just name) so that `RangerTrade` can record the precise card that moved and pool quantities are reliably decremented/incremented on revert.
+- The `TradeCreate` request body should accept a `reward_pool_entry_id` so the backend can look up the card from the linked pool entry rather than requiring the client to supply a raw `card_id`.
+
 ## Constraints by Storyline
 
 | Storyline | Max days | Min rangers | Max rangers | Weather types |

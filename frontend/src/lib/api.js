@@ -16,6 +16,7 @@ export const api = {
   createCampaign: (body) => req('POST', '/campaigns', body),
   getCampaign: (id) => req('GET', `/campaigns/${id}`),
   patchCampaign: (id, body) => req('PATCH', `/campaigns/${id}`, body),
+  deleteCampaign: (id) => req('DELETE', `/campaigns/${id}`),
   // days
   getDays: (cid) => req('GET', `/campaigns/${cid}/days`),
   getDay: (cid, did) => req('GET', `/campaigns/${cid}/days/${did}`),
