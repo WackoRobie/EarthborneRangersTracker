@@ -7,7 +7,7 @@ from app.config import settings
 from app.database import engine, Base, SessionLocal
 import app.models  # noqa: F401 — registers all models with Base
 from app.seed import seed_reference_data
-from app.routers import campaigns, rangers, storylines
+from app.routers import campaigns, cards, days, events, missions, rangers, rewards, storylines
 
 
 @asynccontextmanager
@@ -37,7 +37,12 @@ app.add_middleware(
 
 app.include_router(storylines.router)
 app.include_router(campaigns.router)
+app.include_router(days.router)
 app.include_router(rangers.router)
+app.include_router(missions.router)
+app.include_router(events.router)
+app.include_router(rewards.router)
+app.include_router(cards.router)
 
 
 @app.get("/api/health")

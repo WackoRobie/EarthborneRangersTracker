@@ -2,6 +2,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.event import EventResponse
+from app.schemas.mission import MissionResponse
+from app.schemas.reward import RewardResponse
+
 
 class StorylineRef(BaseModel):
     id: int
@@ -23,7 +27,7 @@ class DayResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# --- Campaign request bodies ---
+# --- Request bodies ---
 
 class CampaignCreate(BaseModel):
     name: str
@@ -35,7 +39,7 @@ class CampaignUpdate(BaseModel):
     status: str | None = None
 
 
-# --- Campaign responses ---
+# --- Responses ---
 
 class CampaignResponse(BaseModel):
     """Summary — used in list responses."""
@@ -50,5 +54,8 @@ class CampaignResponse(BaseModel):
 
 
 class CampaignDetailResponse(CampaignResponse):
-    """Full detail — used for single-campaign responses."""
+    """Full detail — includes days, missions, rewards, and notable events."""
     days: list[DayResponse] = []
+    missions: list[MissionResponse] = []
+    rewards: list[RewardResponse] = []
+    notable_events: list[EventResponse] = []
