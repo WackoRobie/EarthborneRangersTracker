@@ -1,21 +1,24 @@
-import { useState, useEffect } from 'react'
+import { Routes, Route } from 'react-router-dom'
+import { Toaster } from '@/components/ui/toaster'
+import CampaignListPage from '@/pages/CampaignListPage'
+import CampaignCreatePage from '@/pages/CampaignCreatePage'
+import CampaignHubPage from '@/pages/CampaignHubPage'
+import DayClosePage from '@/pages/DayClosePage'
+import RangerCreatePage from '@/pages/RangerCreatePage'
+import RangerDetailPage from '@/pages/RangerDetailPage'
 
-function App() {
-  const [apiStatus, setApiStatus] = useState('checking...')
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then(r => r.json())
-      .then(data => setApiStatus(data.status))
-      .catch(() => setApiStatus('unreachable'))
-  }, [])
-
+export default function App() {
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '2rem' }}>
-      <h1>Earthborne Rangers</h1>
-      <p>API status: <strong>{apiStatus}</strong></p>
-    </div>
+    <>
+      <Routes>
+        <Route path="/" element={<CampaignListPage />} />
+        <Route path="/campaigns/new" element={<CampaignCreatePage />} />
+        <Route path="/campaigns/:id" element={<CampaignHubPage />} />
+        <Route path="/campaigns/:id/session/close" element={<DayClosePage />} />
+        <Route path="/campaigns/:id/rangers/new" element={<RangerCreatePage />} />
+        <Route path="/campaigns/:id/rangers/:rangerId" element={<RangerDetailPage />} />
+      </Routes>
+      <Toaster />
+    </>
   )
 }
-
-export default App
