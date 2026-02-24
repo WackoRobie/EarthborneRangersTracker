@@ -51,7 +51,7 @@ class Ranger(Base):
     campaign = relationship("Campaign", back_populates="rangers")
     role_card = relationship("Card", foreign_keys=[role_card_id])
     outside_interest_card = relationship("Card", foreign_keys=[outside_interest_card_id])
-    trades = relationship("RangerTrade", back_populates="ranger")
+    trades = relationship("RangerTrade", back_populates="ranger", cascade="all, delete-orphan")
 
 
 class RangerTrade(Base):

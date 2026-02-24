@@ -29,11 +29,11 @@ class Campaign(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     storyline = relationship("Storyline", back_populates="campaigns")
-    days = relationship("CampaignDay", back_populates="campaign", order_by="CampaignDay.day_number")
-    rangers = relationship("Ranger", back_populates="campaign")
-    rewards = relationship("CampaignReward", back_populates="campaign")
-    missions = relationship("Mission", back_populates="campaign")
-    notable_events = relationship("NotableEvent", back_populates="campaign")
+    days = relationship("CampaignDay", back_populates="campaign", order_by="CampaignDay.day_number", cascade="all, delete-orphan")
+    rangers = relationship("Ranger", back_populates="campaign", cascade="all, delete-orphan")
+    rewards = relationship("CampaignReward", back_populates="campaign", cascade="all, delete-orphan")
+    missions = relationship("Mission", back_populates="campaign", cascade="all, delete-orphan")
+    notable_events = relationship("NotableEvent", back_populates="campaign", cascade="all, delete-orphan")
 
 
 class CampaignReward(Base):
