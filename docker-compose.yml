@@ -1,0 +1,52 @@
+# docker-compose.yml — local development environment
+# Three services: postgres database, FastAPI backend, React frontend
+#
+# Usage:
+#   docker compose up --build     # first run
+#   docker compose up             # subsequent runs
+#   docker compose down           # stop all services
+#   docker compose down -v        # stop and delete the database volume
+
+services:
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: rangers
+      POSTGRES_PASSWORD: rangers
+      POSTGRES_DB: earthborne
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"   # exposed so you can connect with a local DB client
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rangers -d earthborne"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://rangers:rangers@db:5432/earthborne
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    ports:
+      - "8000:8000"   # FastAPI docs available at http://localhost:8000/docs
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app  # mount source for hot reload
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"   # app available at http://localhost:3000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app         # mount source for hot reload
+      - /app/node_modules       # keep container's node_modules intact
+
+volumes:
+  postgres_data:
