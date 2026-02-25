@@ -10,6 +10,12 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.js'],
+    alias: { '@': path.resolve(__dirname, './src') },
+  },
   server: {
     host: '0.0.0.0',  // required to accept connections inside Docker
     port: 3000,
