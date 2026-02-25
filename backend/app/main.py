@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import engine, Base, SessionLocal
 import app.models  # noqa: F401 — registers all models with Base
 from app.seed import seed_reference_data
-from app.routers import auth, campaigns, cards, days, events, missions, rangers, rewards, storylines
+from app.routers import auth, campaigns, cards, days, events, import_export, missions, rangers, rewards, storylines
 
 
 @asynccontextmanager
@@ -48,6 +48,7 @@ app.include_router(missions.router, dependencies=_auth)
 app.include_router(events.router, dependencies=_auth)
 app.include_router(rewards.router, dependencies=_auth)
 app.include_router(cards.router, dependencies=_auth)
+app.include_router(import_export.router, dependencies=_auth)
 
 
 @app.get("/api/health")

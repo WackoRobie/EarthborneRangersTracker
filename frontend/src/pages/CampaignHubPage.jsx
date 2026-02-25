@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus, Trash2, Minus } from 'lucide-react'
+import { Plus, Trash2, Minus, Download } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -536,13 +536,29 @@ export default function CampaignHubPage() {
 
   const activeDay = campaign.days?.find((d) => d.status === 'active') ?? null
 
+  async function handleExport() {
+    const data = await api.exportCampaign(campaign.id)
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `campaign-${campaign.name.replace(/\s+/g, '-').toLowerCase()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="container max-w-4xl mx-auto p-6">
       <div className="flex items-start justify-between mb-2">
         <PageHeader title={campaign.name} backTo="/" />
-        <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'} className="mt-1">
-          {campaign.status}
-        </Badge>
+        <div className="flex items-center gap-2 mt-1">
+          <Button variant="ghost" size="sm" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-1" /> Export
+          </Button>
+          <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+            {campaign.status}
+          </Badge>
+        </div>
       </div>
       <p className="text-sm text-muted-foreground mb-6">{campaign.storyline?.name}</p>
 

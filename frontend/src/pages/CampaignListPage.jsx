@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Archive, ArchiveRestore, Trash2, LogOut } from 'lucide-react'
+import { Plus, Archive, ArchiveRestore, Trash2, LogOut, Upload } from 'lucide-react'
 import { api } from '@/lib/api'
 import { clearAuth, getUsername } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ export default function CampaignListPage() {
   const [error, setError] = useState(null)
   const [showArchived, setShowArchived] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null) // campaign id pending delete
+  const fileInputRef = useRef(null)
 
   function logout() {
     clearAuth()
@@ -68,6 +69,21 @@ export default function CampaignListPage() {
     } catch (e) { setError(e.message) }
   }
 
+  async function handleImport(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    try {
+      const text = await file.text()
+      const body = JSON.parse(text)
+      const { campaign_id } = await api.importCampaign(body)
+      navigate(`/campaigns/${campaign_id}`)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      e.target.value = ''
+    }
+  }
+
   const visible = campaigns.filter((c) => showArchived || c.status !== 'archived')
   const archivedCount = campaigns.filter((c) => c.status === 'archived').length
 
@@ -80,6 +96,17 @@ export default function CampaignListPage() {
           <Button variant="ghost" size="sm" onClick={logout}>
             <LogOut className="h-4 w-4 mr-1" />
             Logout
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImport}
+          />
+          <Button variant="outline" onClick={() => fileInputRef.current.click()}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import
           </Button>
           <Button onClick={() => navigate('/campaigns/new')}>
             <Plus className="h-4 w-4 mr-2" />

@@ -57,4 +57,7 @@ export const api = {
   getCards: (params) => req('GET', `/cards${params ? '?' + new URLSearchParams(params) : ''}`),
   // storylines
   getStorylines: () => req('GET', '/storylines'),
+  // import / export
+  exportCampaign: (id) => req('GET', `/campaigns/${id}/export`),
+  importCampaign: (body) => req('POST', '/campaigns/import', body),
 }
