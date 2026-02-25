@@ -16,5 +16,8 @@ dist/
 # Docker
 *.log
 
+# nginx SSL certs (generated into Docker volume, not committed)
+nginx/certs/
+
 # OS
 .DS_Store

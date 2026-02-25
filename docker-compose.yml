@@ -1,5 +1,5 @@
 # docker-compose.yml — local development environment
-# Three services: postgres database, FastAPI backend, React frontend
+# Four services: postgres database, FastAPI backend, React frontend, nginx reverse proxy
 #
 # Usage:
 #   docker compose up --build     # first run
@@ -29,9 +29,9 @@ services:
     build: ./backend
     environment:
       DATABASE_URL: postgresql://rangers:rangers@db:5432/earthborne
-      CORS_ORIGINS: '["http://localhost:3000"]'
-    ports:
-      - "8000:8000"   # FastAPI docs available at http://localhost:8000/docs
+      CORS_ORIGINS: >-
+        ["http://localhost:3000","http://localhost","https://localhost",
+         "http://127.0.0.1","https://127.0.0.1"]
     depends_on:
       db:
         condition: service_healthy
@@ -40,13 +40,23 @@ services:
 
   frontend:
     build: ./frontend
-    ports:
-      - "3000:3000"   # app available at http://localhost:3000
     depends_on:
       - backend
     volumes:
       - ./frontend:/app         # mount source for hot reload
       - /app/node_modules       # keep container's node_modules intact
 
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - backend
+    volumes:
+      - ssl_certs:/etc/nginx/certs
+
 volumes:
   postgres_data:
+  ssl_certs:
