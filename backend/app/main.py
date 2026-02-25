@@ -1,13 +1,14 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import get_current_user
 from app.config import settings
 from app.database import engine, Base, SessionLocal
 import app.models  # noqa: F401 — registers all models with Base
 from app.seed import seed_reference_data
-from app.routers import campaigns, cards, days, events, missions, rangers, rewards, storylines
+from app.routers import auth, campaigns, cards, days, events, missions, rangers, rewards, storylines
 
 
 @asynccontextmanager
@@ -34,15 +35,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Auth router — no authentication required (login/register are public)
+app.include_router(auth.router)
 
-app.include_router(storylines.router)
-app.include_router(campaigns.router)
-app.include_router(days.router)
-app.include_router(rangers.router)
-app.include_router(missions.router)
-app.include_router(events.router)
-app.include_router(rewards.router)
-app.include_router(cards.router)
+# All other routers require a valid JWT
+_auth = [Depends(get_current_user)]
+app.include_router(storylines.router, dependencies=_auth)
+app.include_router(campaigns.router, dependencies=_auth)
+app.include_router(days.router, dependencies=_auth)
+app.include_router(rangers.router, dependencies=_auth)
+app.include_router(missions.router, dependencies=_auth)
+app.include_router(events.router, dependencies=_auth)
+app.include_router(rewards.router, dependencies=_auth)
+app.include_router(cards.router, dependencies=_auth)
 
 
 @app.get("/api/health")

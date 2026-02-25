@@ -32,6 +32,9 @@ services:
       CORS_ORIGINS: >-
         ["http://localhost:3000","http://localhost","https://localhost",
          "http://127.0.0.1","https://127.0.0.1"]
+      JWT_SECRET: "replace-with-a-long-random-string-in-production"
+      TOKEN_EXPIRE_DAYS: 30
+      REGISTRATION_TOKEN: "rangers-invite"
     depends_on:
       db:
         condition: service_healthy

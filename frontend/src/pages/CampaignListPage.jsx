@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Archive, ArchiveRestore, Trash2 } from 'lucide-react'
+import { Plus, Archive, ArchiveRestore, Trash2, LogOut } from 'lucide-react'
 import { api } from '@/lib/api'
+import { clearAuth, getUsername } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +22,11 @@ export default function CampaignListPage() {
   const [error, setError] = useState(null)
   const [showArchived, setShowArchived] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null) // campaign id pending delete
+
+  function logout() {
+    clearAuth()
+    navigate('/login')
+  }
 
   function load() {
     setError(null)
@@ -69,10 +75,17 @@ export default function CampaignListPage() {
     <div className="container max-w-4xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Earthborne Rangers</h1>
-        <Button onClick={() => navigate('/campaigns/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Campaign
-        </Button>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">{getUsername()}</span>
+          <Button variant="ghost" size="sm" onClick={logout}>
+            <LogOut className="h-4 w-4 mr-1" />
+            Logout
+          </Button>
+          <Button onClick={() => navigate('/campaigns/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Campaign
+          </Button>
+        </div>
       </div>
 
       {error && <ErrorMessage message={error} />}

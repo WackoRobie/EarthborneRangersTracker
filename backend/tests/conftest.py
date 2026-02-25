@@ -16,10 +16,12 @@ from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
 
 import app.models  # noqa: F401 — registers all models with Base
+from app.auth import get_current_user
 from app.database import Base, get_db
 from app.main import app
 from app.models.card import Card
 from app.models.storyline import Storyline
+from app.models.user import User
 from app.seed import seed_reference_data
 
 TEST_DATABASE_URL = os.getenv(
@@ -92,7 +94,11 @@ def client(engine):
         finally:
             db.close()
 
+    def override_get_current_user():
+        return User(id=1, username="testuser", hashed_password="x")
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
     # Do NOT use TestClient as a context manager — that triggers lifespan,
     # which would run create_all + seed against the test DB a second time.
     c = TestClient(app, raise_server_exceptions=True)
@@ -102,10 +108,11 @@ def client(engine):
 
 @pytest.fixture(autouse=True)
 def clean_campaigns(engine):
-    """Truncate all campaign-derived data after every test."""
+    """Truncate all campaign-derived data and users after every test."""
     yield
     with engine.connect() as conn:
         conn.execute(text("TRUNCATE campaigns CASCADE"))
+        conn.execute(text("TRUNCATE users CASCADE"))
         conn.commit()
 
 

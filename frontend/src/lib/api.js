@@ -1,11 +1,25 @@
+import { clearAuth, getToken } from '@/lib/auth'
+
 const base = '/api'
 
 async function req(method, path, body) {
+  const token = getToken()
+  const headers = {}
+  if (body) headers['Content-Type'] = 'application/json'
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
   const res = await fetch(`${base}${path}`, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   })
+
+  if (res.status === 401 || res.status === 403) {
+    clearAuth()
+    window.location.href = '/login'
+    return
+  }
+
   if (!res.ok) throw new Error(await res.text())
   return res.status === 204 ? null : res.json()
 }
