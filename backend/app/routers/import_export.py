@@ -4,11 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.models.campaign import Campaign, CampaignDay, CampaignReward, DayStatus, Mission, NotableEvent
 from app.models.card import Card
 from app.models.ranger import Ranger, RangerTrade
 from app.models.storyline import Storyline
+from app.models.user import User
 
 router = APIRouter(prefix="/api/campaigns", tags=["import_export"])
 
@@ -109,7 +111,11 @@ def export_campaign(campaign_id: int, db: Session = Depends(get_db)):
 # ── Import ────────────────────────────────────────────────────────────────────
 
 @router.post("/import", status_code=201)
-def import_campaign(body: dict, db: Session = Depends(get_db)):
+def import_campaign(
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     # 1. Basic validation
     if "version" not in body or "campaign" not in body:
         raise HTTPException(422, "Invalid export file: missing 'version' or 'campaign'")
@@ -159,6 +165,7 @@ def import_campaign(body: dict, db: Session = Depends(get_db)):
         name=data["name"],
         storyline_id=storyline.id,
         status=data.get("status", "active"),
+        owner_id=current_user.id,
     )
     db.add(campaign)
     db.flush()

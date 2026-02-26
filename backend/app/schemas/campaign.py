@@ -47,6 +47,7 @@ class CampaignResponse(BaseModel):
     name: str
     status: str
     created_at: datetime
+    owner_id: int | None = None
     storyline: StorylineRef
     current_day: DayResponse | None = None
 

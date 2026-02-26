@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import require_campaign_write
 from app.models.campaign import Campaign, CampaignDay, CampaignStatus, DayStatus
 from app.schemas.campaign import DayResponse
 
@@ -14,16 +15,11 @@ class DayCloseRequest(BaseModel):
     path_terrain: str
 
 
-def _get_campaign_or_404(campaign_id: int, db: Session) -> Campaign:
+@router.get("/{day_id}", response_model=DayResponse)
+def get_day(campaign_id: int, day_id: int, db: Session = Depends(get_db)):
     campaign = db.get(Campaign, campaign_id)
     if not campaign:
         raise HTTPException(404, "Campaign not found")
-    return campaign
-
-
-@router.get("/{day_id}", response_model=DayResponse)
-def get_day(campaign_id: int, day_id: int, db: Session = Depends(get_db)):
-    _get_campaign_or_404(campaign_id, db)
     day = db.get(CampaignDay, day_id)
     if not day or day.campaign_id != campaign_id:
         raise HTTPException(404, "Day not found")
@@ -35,6 +31,7 @@ def close_day(
     campaign_id: int,
     day_id: int,
     body: DayCloseRequest,
+    campaign: Campaign = Depends(require_campaign_write),
     db: Session = Depends(get_db),
 ):
     """Close the active day and advance the campaign to the next day.
@@ -44,8 +41,6 @@ def close_day(
     - Activates Day N+1.
     - If this is the final day, marks the campaign as completed instead.
     """
-    campaign = _get_campaign_or_404(campaign_id, db)
-
     day = db.get(CampaignDay, day_id)
     if not day or day.campaign_id != campaign_id:
         raise HTTPException(404, "Day not found")

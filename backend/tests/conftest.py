@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
 
 import app.models  # noqa: F401 — registers all models with Base
-from app.auth import get_current_user
+from app.auth import get_current_user, hash_password
 from app.database import Base, get_db
 from app.main import app
 from app.models.card import Card
@@ -87,6 +87,15 @@ def client(engine):
     """
     TestSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+    # Create a real user in the test DB so owner_id FK on campaigns is satisfied.
+    db = TestSession()
+    user = User(username="testuser", hashed_password=hash_password("x"))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    user_id, user_username = user.id, user.username
+    db.close()
+
     def override_get_db():
         db = TestSession()
         try:
@@ -95,7 +104,7 @@ def client(engine):
             db.close()
 
     def override_get_current_user():
-        return User(id=1, username="testuser", hashed_password="x")
+        return User(id=user_id, username=user_username, hashed_password="x")
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user

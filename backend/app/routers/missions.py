@@ -2,17 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import require_campaign_write
 from app.models.campaign import Campaign, CampaignDay, DayStatus, Mission
 from app.schemas.mission import MissionCreate, MissionResponse, MissionUpdate
 
 router = APIRouter(prefix="/api/campaigns/{campaign_id}/missions", tags=["missions"])
-
-
-def _get_campaign_or_404(campaign_id: int, db: Session) -> Campaign:
-    campaign = db.get(Campaign, campaign_id)
-    if not campaign:
-        raise HTTPException(404, "Campaign not found")
-    return campaign
 
 
 def _active_day_id(campaign: Campaign) -> int | None:
@@ -24,14 +18,19 @@ def _active_day_id(campaign: Campaign) -> int | None:
 
 @router.get("", response_model=list[MissionResponse])
 def list_missions(campaign_id: int, db: Session = Depends(get_db)):
-    campaign = _get_campaign_or_404(campaign_id, db)
+    campaign = db.get(Campaign, campaign_id)
+    if not campaign:
+        raise HTTPException(404, "Campaign not found")
     return campaign.missions
 
 
 @router.post("", response_model=MissionResponse, status_code=201)
-def create_mission(campaign_id: int, body: MissionCreate, db: Session = Depends(get_db)):
-    campaign = _get_campaign_or_404(campaign_id, db)
-
+def create_mission(
+    campaign_id: int,
+    body: MissionCreate,
+    campaign: Campaign = Depends(require_campaign_write),
+    db: Session = Depends(get_db),
+):
     if body.max_progress < 0 or body.max_progress > 3:
         raise HTTPException(400, "max_progress must be between 0 and 3")
 
@@ -63,10 +62,9 @@ def update_mission(
     campaign_id: int,
     mission_id: int,
     body: MissionUpdate,
+    campaign: Campaign = Depends(require_campaign_write),
     db: Session = Depends(get_db),
 ):
-    _get_campaign_or_404(campaign_id, db)
-
     mission = db.get(Mission, mission_id)
     if not mission or mission.campaign_id != campaign_id:
         raise HTTPException(404, "Mission not found")

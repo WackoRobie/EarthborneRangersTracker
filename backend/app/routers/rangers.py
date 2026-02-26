@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import require_campaign_write
 from app.models.campaign import Campaign, CampaignDay, CampaignReward
 from app.models.card import Card
 from app.models.ranger import Ranger, RangerTrade
@@ -208,9 +209,12 @@ def list_rangers(campaign_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=RangerResponse, status_code=201)
-def create_ranger(campaign_id: int, body: RangerCreate, db: Session = Depends(get_db)):
-    campaign = _get_campaign_or_404(campaign_id, db)
-
+def create_ranger(
+    campaign_id: int,
+    body: RangerCreate,
+    campaign: Campaign = Depends(require_campaign_write),
+    db: Session = Depends(get_db),
+):
     if len(campaign.rangers) >= campaign.storyline.max_rangers:
         raise HTTPException(
             400,
@@ -259,6 +263,7 @@ def create_trade(
     campaign_id: int,
     ranger_id: int,
     body: TradeCreate,
+    campaign: Campaign = Depends(require_campaign_write),
     db: Session = Depends(get_db),
 ):
     ranger = _get_ranger_or_404(campaign_id, ranger_id, db)
@@ -302,6 +307,7 @@ def revert_trade(
     campaign_id: int,
     ranger_id: int,
     trade_id: int,
+    campaign: Campaign = Depends(require_campaign_write),
     db: Session = Depends(get_db),
 ):
     _get_ranger_or_404(campaign_id, ranger_id, db)

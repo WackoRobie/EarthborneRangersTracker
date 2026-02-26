@@ -25,10 +25,13 @@ class Campaign(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     storyline_id = Column(Integer, ForeignKey("storylines.id"), nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     status = Column(String, nullable=False, default=CampaignStatus.active)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     storyline = relationship("Storyline", back_populates="campaigns")
+    owner = relationship("User", foreign_keys=[owner_id])
+    collaborators = relationship("CampaignCollaborator", back_populates="campaign", cascade="all, delete-orphan")
     days = relationship("CampaignDay", back_populates="campaign", order_by="CampaignDay.day_number", cascade="all, delete-orphan")
     rangers = relationship("Ranger", back_populates="campaign", cascade="all, delete-orphan")
     rewards = relationship("CampaignReward", back_populates="campaign", cascade="all, delete-orphan")
