@@ -1,0 +1,19 @@
+# docker-compose.override.yml — local development overrides
+#
+# Docker Compose applies this file automatically on top of docker-compose.yml
+# when running `docker compose up`. It re-adds hot reload for both services.
+#
+# For a production-equivalent run (no overrides):
+#   docker compose -f docker-compose.yml up
+
+services:
+
+  backend:
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules       # keep container's node_modules intact
