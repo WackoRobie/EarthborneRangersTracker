@@ -1,12 +1,17 @@
 # docker-compose.override.yml — local development overrides
 #
 # Docker Compose applies this file automatically on top of docker-compose.yml
-# when running `docker compose up`. It re-adds hot reload for both services.
+# when running `docker compose up`. It re-adds hot reload for both services
+# and exposes the PostgreSQL port for local DB client access.
 #
 # For a production-equivalent run (no overrides):
 #   docker compose -f docker-compose.yml up
 
 services:
+
+  db:
+    ports:
+      - "5432:5432"   # host access for local DB clients; not exposed in production
 
   backend:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
