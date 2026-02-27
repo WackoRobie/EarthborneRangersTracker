@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -23,7 +23,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(username: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(days=settings.token_expire_days)
-    return jwt.encode({"sub": username, "exp": expire}, settings.jwt_secret, algorithm="HS256")
+    return jwt.encode({"sub": username, "exp": expire}, settings.jwt_secret, algorithm="HS256")  # returns str in PyJWT ≥2
 
 
 def get_current_user(
@@ -35,8 +35,8 @@ def get_current_user(
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         username: str = payload.get("sub")
         if not username:
-            raise JWTError("missing sub")
-    except JWTError:
+            raise jwt.InvalidTokenError("missing sub")
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
     user = db.query(User).filter_by(username=username).first()
     if not user:
