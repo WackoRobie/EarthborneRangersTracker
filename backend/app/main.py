@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
@@ -13,12 +14,16 @@ from app.routers import access, auth, campaigns, cards, days, events, import_exp
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
-    try:
-        seed_reference_data(db)
-    finally:
-        db.close()
+    # In Lambda, schema init and seeding are handled as separate deploy-time
+    # steps (Alembic + a one-off seed invocation). Running them on every cold
+    # start would be slow and unsafe under concurrent invocations.
+    if not os.getenv("LAMBDA_ENV"):
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            seed_reference_data(db)
+        finally:
+            db.close()
     yield
 
 
