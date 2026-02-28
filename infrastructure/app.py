@@ -18,8 +18,8 @@ from stacks.app_stack import AppStack
 app = cdk.App()
 
 env = cdk.Environment(
-    account=app.node.try_get_context("account"),
-    region=app.node.try_get_context("region") or "us-east-1",
+    account=app.node.try_get_context("account") or cdk.Aws.ACCOUNT_ID,
+    region=app.node.try_get_context("region") or cdk.Aws.REGION,
 )
 
 db_stack = DatabaseStack(app, "EarthborneDb", env=env)
