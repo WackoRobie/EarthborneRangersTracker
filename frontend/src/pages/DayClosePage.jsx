@@ -10,7 +10,7 @@ import PageHeader from '@/components/shared/PageHeader'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import ErrorMessage from '@/components/shared/ErrorMessage'
 
-const PATH_TERRAINS = ['Forest', 'Grassland', 'Marsh', 'Mountain', 'River', 'Scrubland']
+const PATH_TERRAINS = ['Old-growth', 'Mountain Pass', 'Woods', 'Lakeshore', 'Grassland', 'Ravine', 'Swamp', 'River (vehicle required)']
 
 function RangerTradePanel({ ranger, rewards }) {
   const cid = ranger.campaign_id
