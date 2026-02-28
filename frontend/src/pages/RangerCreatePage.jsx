@@ -62,9 +62,8 @@ export default function RangerCreatePage() {
   const [error, setError] = useState(null)
 
   // Form state
-  const [aspectCardId, setAspectCardId] = useState(null)
-  const [aspectCardName, setAspectCardName] = useState('')
-  const [stats, setStats] = useState({ AWA: '', FIT: '', FOC: '', SPI: '' })
+  const [aspectHigh, setAspectHigh] = useState(null)  // aspect set to 3
+  const [aspectLow, setAspectLow] = useState(null)    // aspect set to 1
   const [name, setName] = useState('')
   const [personalityIds, setPersonalityIds] = useState({ AWA: null, FIT: null, FOC: null, SPI: null })
   const [backgroundSet, setBackgroundSet] = useState('')
@@ -81,7 +80,14 @@ export default function RangerCreatePage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const selectedAspectCard = allCards.find((c) => c.id === aspectCardId)
+  const stats = useMemo(() => {
+    if (!aspectHigh || !aspectLow) return { AWA: '', FIT: '', FOC: '', SPI: '' }
+    return Object.fromEntries(ASPECTS.map((a) => [a, a === aspectHigh ? 3 : a === aspectLow ? 1 : 2]))
+  }, [aspectHigh, aspectLow])
+
+  const aspectCardName = aspectHigh && aspectLow
+    ? ASPECTS.map((a) => `${a} ${a === aspectHigh ? 3 : a === aspectLow ? 1 : 2}`).join(' / ')
+    : ''
 
   const personalityByAspect = useMemo(() => {
     const map = {}
@@ -129,7 +135,7 @@ export default function RangerCreatePage() {
 
   const canNext = [
     // 0 Aspect
-    !!aspectCardName.trim() && ASPECTS.every((a) => stats[a] !== '' && !isNaN(parseInt(stats[a]))),
+    !!aspectHigh && !!aspectLow && aspectHigh !== aspectLow,
     // 1 Name
     !!name.trim(),
     // 2 Personality
@@ -191,32 +197,40 @@ export default function RangerCreatePage() {
           {step === 0 && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Enter the aspect card name printed on the card, then enter the four stat values shown on it.
+                Select which aspect is rated 3 and which is rated 1. The other two are set to 2.
               </p>
-              <div className="space-y-2">
-                <Label htmlFor="aspect-name">Aspect Card Name</Label>
-                <Input
-                  id="aspect-name"
-                  placeholder="e.g. Wanderer"
-                  value={aspectCardName}
-                  onChange={(e) => setAspectCardName(e.target.value)}
-                />
+              <div className="space-y-1">
+                <Label>Aspect rated 3</Label>
+                <Select value={aspectHigh ?? ''} onValueChange={(v) => { setAspectHigh(v); if (v === aspectLow) setAspectLow(null) }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select aspect..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASPECTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {ASPECTS.map((a) => (
-                  <div key={a} className="space-y-1">
-                    <Label className="text-xs">{a}</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="5"
-                      value={stats[a]}
-                      onChange={(e) => setStats((prev) => ({ ...prev, [a]: e.target.value }))}
-                      className="text-center"
-                    />
-                  </div>
-                ))}
+              <div className="space-y-1">
+                <Label>Aspect rated 1</Label>
+                <Select value={aspectLow ?? ''} onValueChange={setAspectLow} disabled={!aspectHigh}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select aspect..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASPECTS.filter((a) => a !== aspectHigh).map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
+              {aspectHigh && aspectLow && (
+                <div className="grid grid-cols-4 gap-2 pt-2">
+                  {ASPECTS.map((a) => (
+                    <div key={a} className="flex flex-col items-center p-3 rounded-md bg-muted">
+                      <span className="text-xs text-muted-foreground">{a}</span>
+                      <span className="text-xl font-bold">{stats[a]}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
