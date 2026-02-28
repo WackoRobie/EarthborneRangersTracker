@@ -14,7 +14,7 @@ async function req(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401) {
     clearAuth()
     window.location.href = '/login'
     return
