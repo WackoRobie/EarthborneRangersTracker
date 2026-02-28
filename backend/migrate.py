@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 
 def handler(event, context):
-    """Run ``alembic upgrade head`` against the Aurora cluster.
+    """Run ``alembic upgrade head`` then seed reference data.
 
     Pass ``{"stamp_base": true}`` in the event payload to first reset the
     alembic_version table to base before upgrading.  Use this once when
@@ -41,7 +41,19 @@ def handler(event, context):
             conn.execute(sa.text("DELETE FROM alembic_version"))
             conn.commit()
         log.info("Cleared alembic_version table")
+
     log.info("Running alembic upgrade head")
     alembic_command.upgrade(cfg, "head")
     log.info("Migrations complete")
+
+    # Seed reference data (cards + storylines) — idempotent, safe to re-run.
+    from app.database import SessionLocal
+    from app.seed import seed_reference_data
+    db = SessionLocal()
+    try:
+        seed_reference_data(db)
+        log.info("Reference data seeded")
+    finally:
+        db.close()
+
     return {"status": "ok"}
