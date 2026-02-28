@@ -59,15 +59,11 @@ class AppStack(Stack):
             self,
             "LambdaSg",
             vpc=db_stack.vpc,
-            description="Earthborne Rangers Lambda — egress to Aurora + internet",
+            description="Earthborne Rangers Lambda - egress to Aurora and internet",
             allow_all_outbound=True,
         )
-        # Allow the Lambda SG to reach Aurora on 5432
-        db_stack.db_security_group.add_ingress_rule(
-            peer=lambda_sg,
-            connection=ec2.Port.tcp(5432),
-            description="Lambda → Aurora",
-        )
+        # The DB security group already allows port 5432 from the entire VPC
+        # CIDR (set in DatabaseStack), so no extra rule needed here.
 
         # ── Lambda execution role ──────────────────────────────────────────
         lambda_role = iam.Role(
@@ -85,8 +81,11 @@ class AppStack(Stack):
         app_secret.grant_read(lambda_role)
 
         # ── Lambda function ────────────────────────────────────────────────
-        # Package the entire backend/ directory as a zip asset.
-        # The function handler is handler.handler (backend/handler.py).
+        # Docker bundling installs pip deps into /asset-output, then copies
+        # only the files the API function needs (no migrations/ or migrate.py).
+        _pip_install = (
+            "pip install -r requirements.txt -t /asset-output --no-cache-dir -q"
+        )
         backend_function = lambda_.Function(
             self,
             "ApiFunction",
@@ -94,18 +93,14 @@ class AppStack(Stack):
             handler="handler.handler",
             code=lambda_.Code.from_asset(
                 "../backend",
-                # Exclude test files, __pycache__, venv artefacts
-                exclude=[
-                    ".venv",
-                    "venv",
-                    "__pycache__",
-                    "*.pyc",
-                    "tests/",
-                    "alembic/",
-                    "alembic.ini",
-                    ".pytest_cache",
-                    ".env",
-                ],
+                bundling=cdk.BundlingOptions(
+                    image=lambda_.Runtime.PYTHON_3_12.bundling_image,
+                    command=[
+                        "bash",
+                        "-c",
+                        f"{_pip_install} && cp -r app handler.py /asset-output",
+                    ],
+                ),
             ),
             vpc=db_stack.vpc,
             vpc_subnets=ec2.SubnetSelection(
@@ -230,15 +225,14 @@ class AppStack(Stack):
             handler="migrate.handler",
             code=lambda_.Code.from_asset(
                 "../backend",
-                exclude=[
-                    ".venv",
-                    "venv",
-                    "__pycache__",
-                    "*.pyc",
-                    "tests/",
-                    ".pytest_cache",
-                    ".env",
-                ],
+                bundling=cdk.BundlingOptions(
+                    image=lambda_.Runtime.PYTHON_3_12.bundling_image,
+                    command=[
+                        "bash",
+                        "-c",
+                        f"{_pip_install} && cp -r app migrations alembic.ini migrate.py /asset-output",
+                    ],
+                ),
             ),
             vpc=db_stack.vpc,
             vpc_subnets=ec2.SubnetSelection(

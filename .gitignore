@@ -21,3 +21,4 @@ nginx/certs/
 
 # OS
 .DS_Store
+cdk.out/

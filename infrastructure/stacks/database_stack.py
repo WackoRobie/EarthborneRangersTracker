@@ -48,7 +48,7 @@ class DatabaseStack(Stack):
             self,
             "DbSg",
             vpc=self.vpc,
-            description="Aurora Serverless v2 — allow PostgreSQL from within VPC",
+            description="Aurora Serverless v2 - allow PostgreSQL from within VPC",
             allow_all_outbound=False,
         )
         self.db_security_group.add_ingress_rule(
@@ -64,19 +64,15 @@ class DatabaseStack(Stack):
             engine=rds.DatabaseClusterEngine.aurora_postgres(
                 version=rds.AuroraPostgresEngineVersion.VER_16_6,
             ),
-            # Serverless v2 writer instance — scales to 0 ACUs when idle
-            writer=rds.ClusterInstance.serverless_v2(
-                "Writer",
-                auto_pause=rds.TimeoutAction.force_apply_server_side_timeout(),
-            ),
+            writer=rds.ClusterInstance.serverless_v2("Writer"),
             vpc=self.vpc,
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
             ),
             security_groups=[self.db_security_group],
             default_database_name="earthborne",
-            # Serverless v2 capacity: 0.5 → 4 ACUs (free tier friendly)
-            serverless_v2_min_capacity=0.5,
+            # Serverless v2 capacity: 0 → 4 ACUs (0 minimum enables scale-to-zero)
+            serverless_v2_min_capacity=0,
             serverless_v2_max_capacity=4,
             # Keep cluster and its auto-generated secret alive on stack delete
             removal_policy=cdk.RemovalPolicy.RETAIN,
