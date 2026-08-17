@@ -119,6 +119,7 @@ Each play session maps to one Day. The app supports three phases:
 
 ### 2. During Session
 - Add notable events (free-form text entries)
+- Review the full notable-events log for the campaign (all days, not just the active one)
 - Update mission progress / mark missions complete
 - Add earned rewards to the campaign rewards pool
 
@@ -138,6 +139,7 @@ Each play session maps to one Day. The app supports three phases:
 3. Surface session setup info (weather, location, path terrain) at the start of each day
 4. Log outcomes at the close of each day (missions, notable events)
 5. Manage the campaign rewards pool and ranger trades with full independent reversion support
+6. Display the campaign's notable-event history across **all** days — a persistent log grouped by day, not only the active day. Notable events recorded on any past day must remain visible in the app after that day is closed.
 
 ## Outstanding Questions
 

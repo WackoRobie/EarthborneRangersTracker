@@ -22,3 +22,6 @@ nginx/certs/
 # OS
 .DS_Store
 cdk.out/
+
+# Local security review — kept out of this public repo
+security_review.md

@@ -411,6 +411,74 @@ function RangersTab({ campaign, rangers }) {
   )
 }
 
+// ── Log Tab (full notable-events history, all days) ───────────────────────────
+
+function LogTab({ campaign }) {
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const cid = campaign.id
+
+  const loadEvents = useCallback(
+    () => api.getEvents(cid).then(setEvents).catch((e) => setError(e.message)).finally(() => setLoading(false)),
+    [cid],
+  )
+
+  useEffect(() => { loadEvents() }, [loadEvents])
+
+  async function deleteEvent(eid) {
+    try {
+      await api.deleteEvent(cid, eid)
+      loadEvents()
+    } catch (e) { setError(e.message) }
+  }
+
+  // Map day_id → day_number for labelling, then group events by day.
+  const dayNumberById = new Map((campaign.days ?? []).map((d) => [d.id, d.day_number]))
+  const byDay = new Map()
+  for (const ev of events) {
+    if (!byDay.has(ev.day_id)) byDay.set(ev.day_id, [])
+    byDay.get(ev.day_id).push(ev)
+  }
+  // Newest day first; unknown days (no matching day row) sort last.
+  const groups = [...byDay.entries()].sort(
+    (a, b) => (dayNumberById.get(b[0]) ?? -1) - (dayNumberById.get(a[0]) ?? -1),
+  )
+
+  if (loading) return <LoadingSpinner />
+
+  return (
+    <div className="space-y-4">
+      {error && <ErrorMessage message={error} />}
+
+      {events.length === 0 && (
+        <p className="text-center text-muted-foreground py-8">No notable events recorded yet.</p>
+      )}
+
+      {groups.map(([dayId, dayEvents]) => (
+        <Card key={dayId}>
+          <CardHeader>
+            <CardTitle className="text-base">
+              {dayNumberById.has(dayId) ? `Day ${dayNumberById.get(dayId)}` : 'Unknown day'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {dayEvents.map((ev) => (
+              <div key={ev.id} className="flex items-start gap-2">
+                <p className="text-sm flex-1 whitespace-pre-wrap">{ev.text}</p>
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => deleteEvent(ev.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 // ── Rewards Tab ───────────────────────────────────────────────────────────────
 
 function RewardsTab({ campaign }) {
@@ -565,6 +633,7 @@ export default function CampaignHubPage() {
       <Tabs defaultValue="session">
         <TabsList className="mb-4">
           <TabsTrigger value="session">Session</TabsTrigger>
+          <TabsTrigger value="log">Log</TabsTrigger>
           <TabsTrigger value="missions">Missions</TabsTrigger>
           <TabsTrigger value="rangers">Rangers</TabsTrigger>
           <TabsTrigger value="rewards">Rewards</TabsTrigger>
@@ -578,6 +647,10 @@ export default function CampaignHubPage() {
             onMissionUpdate={loadMissions}
             onRefresh={() => {}}
           />
+        </TabsContent>
+
+        <TabsContent value="log">
+          <LogTab campaign={campaign} />
         </TabsContent>
 
         <TabsContent value="missions">
